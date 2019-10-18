@@ -14,116 +14,144 @@
 
 using namespace BlackLib;
 
-int getRandomNumber(){
-    srand(time(NULL));
-    return rand() % 2;
-}
+void *tem1(void *arg);
+void *tem2(void *arg);
+void *tem3(void *arg);
 
-bool canBeRunning(bool loser, int round){
-    return !loser && round != 16;
-}
 
-void displaySequenceOfLeds(BlackGPIO &saida1, BlackGPIO &saida2, int round, int *numbers){
-    for(int i = 0; i<round; i++){
-        if(numbers[i]==0){
-            saida1.setValue(high);
-            sleep(1);
-            saida1.setValue(low);
-        }
-        if(numbers[i]==1){
-            saida2.setValue(high);
-            sleep(1);
-            saida2.setValue(low);
-        }
-    }
-}
-
-void displayGamerOver(BlackGPIO saida1, BlackGPIO saida2){
-    saida1.setValue(high);
-    saida2.setValue(high);
-}
-
-void displayLed(int led, BlackGPIO &saida1, BlackGPIO &saida2){
-    if(led == 0){
-        saida1.setValue(high);
-        sleep(1);
-        saida1.setValue(low);
-    }
-    if(led == 1){
-        saida2.setValue(high);
-        sleep(1);
-        saida2.setValue(low);
-    }
-}
-
-bool validateInputData(std::string entrada1Value, std::string entrada2Value){
-    if(entrada1Value == "1" && entrada2Value == "1"){
-        return false;
-    }
-    return true;
-}
-
-int castingValuesOfInput(std::string entrada1Value, std::string entrada2Value){
-    if(entrada1Value == "1"){
-        return 0;
-    }
-    if(entrada2Value == "1"){
-        return 1;
-    }
-}
-
-void clearDataReadInput(std::string &entrada1Value, std::string &entrada2Value){
-    entrada1Value = "0";
-    entrada2Value = "0";
-}   
+pthread_mutex_t work_mutex1;
+pthread_mutex_t work_mutex2;
 
 int main(int argc, char * argv[]){
-    BlackGPIO saida1(GPIO_66, output);
-    BlackGPIO saida2(GPIO_69, output);
-    BlackGPIO entrada1(GPIO_67, input);
-    BlackGPIO entrada2(GPIO_68, input);
-    std::string entrada1Value = "0";
-    std::string entrada2Value = "0";
-    int numbers[16];
-    int round = 1;
-    bool loser = false;
+
+    int res;
+    // ADC teste = ADC(AIN5);
+    // ADC teste1 = ADC(AIN1);
+    // ADC teste2 = ADC(AIN0);
+
+    // int pot[3] = {2, 2, 2};
+
+    // pot[0] = int(teste.getPercentValue())/10;
+    // pot[1] = int(teste1.getPercentValue())/10;
+    // pot[2] = int(teste2.getPercentValue())/10;
+    /* code */
+
+
     
-    while (canBeRunning(loser, round)){
-        numbers[round-1] = getRandomNumber();
-        displaySequenceOfLeds(saida1, saida2, round, numbers);
-        
-        for(int i = 0; i<round; i++){
-            while(entrada1Value == "0" && entrada2Value == "0"){
-                entrada1Value = entrada1.getValue();
-                entrada2Value = entrada2.getValue();
-            }
-            sleep(1);
+ 
+    pthread_t a_thread;
+    res = pthread_mutex_init(&work_mutex1, NULL);
 
-            bool validInputData = validateInputData(entrada1Value, entrada2Value);
-            if(!validInputData){
-                displayGamerOver(saida1, saida2);
-                loser = true;
-                break;
-            }
-
-            int inputData = castingValuesOfInput(entrada1Value, entrada2Value);
-            displayLed(inputData, saida1, saida2);
-
-            if(inputData != numbers[i]){
-                displayGamerOver(saida1, saida2);
-                loser = true;
-                break;
-            }
-            clearDataReadInput(entrada1Value, entrada2Value);
-        }
-        round++;
+    if (res != 0) {
+        perror("A Craição do mutex1");
+        exit(EXIT_FAILURE);
     }
-    if(!loser){
-        while(1){
-            displayLed(0, saida1, saida2);
-            displayLed(1, saida1, saida2);
-            sleep(1);
-        }
+
+    res = pthread_mutex_init(&work_mutex2, NULL);
+
+    if (res != 0) {
+        perror("A Craição do mutex2");
+        exit(EXIT_FAILURE);
+    }
+
+    res = pthread_create(&a_thread, NULL, tem1, NULL);
+    if (res != 0) {
+        perror("A Craição da Thread falhou");
+        exit(EXIT_FAILURE);
+    }
+
+    res = pthread_create(&a_thread, NULL, tem2, NULL);
+    if (res != 0) {
+        perror("A Craição da Thread falhou");
+        exit(EXIT_FAILURE);
+    }
+
+    res = pthread_create(&a_thread, NULL, tem3, NULL);
+    if (res != 0) {
+        perror("A Craição da Thread falhou");
+        exit(EXIT_FAILURE);
+    }
+    
+    while (true)
+    {
     }
     return 0;
+}
+
+void *tem1(void *arg) {
+    ADC leitura = ADC(AIN1);
+
+    
+    BlackGPIO saida1(GPIO_66, output);  // direita
+    BlackGPIO saida2(GPIO_67, output);  // baixo
+    BlackGPIO saida3(GPIO_68, output);  // esquerda
+    BlackGPIO saida4(GPIO_69, output);  // cima
+    while (true)
+    {
+        int p = int(leitura.getPercentValue())/10;
+        int tempo = 100000 * p;
+        // std::cout << p << endl;
+        saida1.setValue(high);
+        saida2.setValue(low);
+        saida3.setValue(low);
+        saida4.setValue(low);
+        pthread_mutex_lock(&work_mutex2);
+        usleep(tempo);
+        saida2.setValue(high);
+        saida1.setValue(low);
+        pthread_mutex_unlock(&work_mutex2);
+        saida3.setValue(low);
+        saida4.setValue(low);
+        usleep(tempo);
+        saida3.setValue(high);
+        saida1.setValue(low);
+        saida2.setValue(low);
+        saida4.setValue(low);
+        pthread_mutex_lock(&work_mutex1);
+        usleep(tempo);
+        saida4.setValue(high);
+        saida3.setValue(low);
+        pthread_mutex_unlock(&work_mutex1);
+        saida2.setValue(low);
+        saida1.setValue(low);
+        usleep(tempo);
+    }
+}
+
+void *tem2(void *arg) {
+    ADC leitura = ADC(AIN0);
+    BlackGPIO saida1(GPIO_44, output);
+    BlackGPIO saida2(GPIO_45, output); // cima
+    while (true)
+    {
+        int p = int(leitura.getPercentValue())/10;
+        int tempo = 100000 * p;
+        saida1.setValue(high);
+        saida2.setValue(low);
+        pthread_mutex_lock(&work_mutex2);
+        usleep(tempo);
+        saida2.setValue(high);
+        pthread_mutex_unlock(&work_mutex2);
+        saida1.setValue(low);
+        usleep(tempo);
+    }
+}
+
+void *tem3(void *arg) {
+    ADC leitura = ADC(AIN5);
+    BlackGPIO saida1(GPIO_27, output); // cima
+    BlackGPIO saida2(GPIO_65, output);
+    while (true)
+    {
+        int p = int(leitura.getPercentValue())/10;
+        int tempo = 100000 * p;
+        saida2.setValue(high);
+        saida1.setValue(low);
+        pthread_mutex_lock(&work_mutex1);
+        usleep(tempo);
+        saida1.setValue(high);
+        saida2.setValue(low);
+        pthread_mutex_unlock(&work_mutex1);
+        usleep(tempo);
+    }
 }
