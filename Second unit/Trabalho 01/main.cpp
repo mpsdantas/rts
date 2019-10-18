@@ -10,7 +10,6 @@
 #include <stdlib.h> 
 #include <time.h>   
 #include <unistd.h>
-// Inclua as classes que achar necessario
 
 using namespace BlackLib;
 
@@ -23,23 +22,9 @@ pthread_mutex_t work_mutex1;
 pthread_mutex_t work_mutex2;
 
 int main(int argc, char * argv[]){
-
     int res;
-    // ADC teste = ADC(AIN5);
-    // ADC teste1 = ADC(AIN1);
-    // ADC teste2 = ADC(AIN0);
-
-    // int pot[3] = {2, 2, 2};
-
-    // pot[0] = int(teste.getPercentValue())/10;
-    // pot[1] = int(teste1.getPercentValue())/10;
-    // pot[2] = int(teste2.getPercentValue())/10;
-    /* code */
-
-
-    
- 
     pthread_t a_thread;
+
     res = pthread_mutex_init(&work_mutex1, NULL);
 
     if (res != 0) {
