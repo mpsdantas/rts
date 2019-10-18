@@ -1,5 +1,5 @@
 /**
- * Autor: Tiago Fernandes de Miranda
+ * Autor: José Tobias e Marcus Dantas 
  * Universidade Federal do Rio Grande do Norte
  */
 
